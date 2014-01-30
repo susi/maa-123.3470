@@ -9,7 +9,8 @@ function initialize() {
         overviewMapControl: true,
         overviewMapControlOptions: {
             opened: true
-        }
+        },
+        mapTypeId: google.maps.MapTypeId.TERRAIN
     };
     map = new google.maps.Map(document.getElementById('map-canvas'),
                               mapOptions);
