@@ -5,6 +5,8 @@ var directionsDisplay;
 var directionsService;
 var alternate = false;
 var directionsDiv;
+var autocomplete;
+var places;
 
 function initialize() {
     var mapOptions = {
@@ -15,7 +17,7 @@ function initialize() {
         overviewMapControlOptions: {
             opened: true
         },
-        mapTypeId: google.maps.MapTypeId.TERRAIN
+        mapTypeId: google.maps.MapTypeId.STREET
     };
     map = new google.maps.Map(document.getElementById('map-canvas'),
                               mapOptions);
@@ -24,6 +26,7 @@ function initialize() {
     directionsService = new google.maps.DirectionsService();
     directionsDisplay = new google.maps.DirectionsRenderer();
     directionsDisplay.setMap(map);
+    places = new google.maps.places.PlacesService(map);
 
     infowindow = new google.maps.InfoWindow({
         content: '<div style="width:15em;">&nbsp;</div>'
@@ -61,6 +64,13 @@ function getdirections(featureId, lat, lng) {
     }
     map.controls[google.maps.ControlPosition.TOP_CENTER].push(directionsDiv);
 
+    autocomplete = new google.maps.places.Autocomplete(
+        document.getElementById('from'),
+        {
+            bounds: map.getBounds(),
+            componentRestrictions: { 'country': 'fi' },
+            types: ['geocode']
+        });
     document.getElementById('to').value = lat+","+lng;
     document.getElementById('real-to').value = lat+","+lng;
     geocoder.geocode({'latLng': latLng}, function(results, status) {
