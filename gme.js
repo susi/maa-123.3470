@@ -4,6 +4,7 @@ var geocoder;
 var directionsDisplay;
 var directionsService;
 var alternate = false;
+var directionsDiv;
 
 function initialize() {
     var mapOptions = {
@@ -46,20 +47,22 @@ function initialize() {
 //        anchor.set('anchorPoint', event.pixelOffset);
         infowindow.open(map, anchor);
     });
-    
+    directionsDiv = document.getElementById('directions-widget');
+
 }
 
 function getdirections(featureId, lat, lng) {
     var latLng = new google.maps.LatLng(lat,lng);
     // Create a div to hold the control.
     infowindow.close();
-    var directionsDiv = document.getElementById('directions-widget');
-    document.getElementById('to').value = lat+","+lng;
-    document.getElementById('real-to').value = lat+","+lng;
+
     if (map.controls[google.maps.ControlPosition.TOP_CENTER].length > 0) {
         map.controls[google.maps.ControlPosition.TOP_CENTER].pop();
     }
     map.controls[google.maps.ControlPosition.TOP_CENTER].push(directionsDiv);
+
+    document.getElementById('to').value = lat+","+lng;
+    document.getElementById('real-to').value = lat+","+lng;
     geocoder.geocode({'latLng': latLng}, function(results, status) {
         if (status == google.maps.GeocoderStatus.OK) {
             if (results[0]) {
@@ -71,6 +74,7 @@ function getdirections(featureId, lat, lng) {
 }
 
 function doDirections(travelMode) {
+    selectImage(travelMode);
     var start = document.getElementById("from").value;
     if (alternate) {
         var end = document.getElementById("to").value;
@@ -104,8 +108,43 @@ function doDirections(travelMode) {
 }
 
 function closeDirections() {
+    unselectAll();
     map.controls[google.maps.ControlPosition.TOP_CENTER].pop();
     directionsDisplay.setMap(null);
+}
+
+function selectImage(travelMode) {
+    if (travelMode == google.maps.TravelMode.DRIVING) {
+        document.getElementById('car').src = 'img/auto_selected.png';
+        document.getElementById('bus').src = 'img/bussi.png';
+        document.getElementById('walk').src = 'img/walk.png';
+        document.getElementById('bike').src = 'img/bike.png';
+    }
+    else if (travelMode == google.maps.TravelMode.TRANSIT) {
+        document.getElementById('car').src = 'img/auto.png';
+        document.getElementById('bus').src = 'img/bussi_selected.png';
+        document.getElementById('walk').src = 'img/walk.png';
+        document.getElementById('bike').src = 'img/bike.png';
+    }
+    else if (travelMode == google.maps.TravelMode.WALKING) {
+        document.getElementById('car').src = 'img/auto.png';
+        document.getElementById('bus').src = 'img/bussi.png';
+        document.getElementById('walk').src = 'img/walk_selected.png';
+        document.getElementById('bike').src = 'img/bike.png';
+    }
+    else if (travelMode == google.maps.TravelMode.BICYCLING) {
+        document.getElementById('car').src = 'img/auto.png';
+        document.getElementById('bus').src = 'img/bussi.png';
+        document.getElementById('walk').src = 'img/walk.png';
+        document.getElementById('bike').src = 'img/bike_selected.png';
+    }
+}
+
+function unselectAll() {
+    document.getElementById('car').src = 'img/auto.png';
+    document.getElementById('bus').src = 'img/bussi.png';
+    document.getElementById('walk').src = 'img/walk.png';
+    document.getElementById('bike').src = 'img/bike.png';
 }
 
 // Bias the autocomplete object to the user's geographical location,
