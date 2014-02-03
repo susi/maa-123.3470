@@ -9,10 +9,10 @@
 }
 
 #directions-widget {
-    border-style: none solid solid none;
-    border-width: 0 4px 4px 0;
+    background-color: #fff;
+    border: 1px solid #aaa;
     border-radius: 5px;
-    border-color: #ccc;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.25);
     background-color: white;
     padding: 2em;
     font-size: 1.5em;
