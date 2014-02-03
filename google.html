@@ -14,14 +14,15 @@
     <script src="gme.js"></script>
   </head>
   <body>
-    <div id="directions-widget" class="hidden">
+    <div id="directions-widget" class="hidden shadow">
         <div class="close" onclick="closeDirections();"><a href="#">x</a></div>
         <form name="directions-form" id="directions-form">
-            <label for="from">mistä:</label>
+            <label for="from">start:</label>
             <input type="text" name="from" id="from" value=""><br>
-            <label for="to">mihin:</label>
+            <label for="to">destination:</label>
             <input type="text" name="to" id="to" value="">
             <input type="hidden" name="real-to" id="real-to" value=""><br>
+            <label>transport:</label>
             <img class="button" id="car" src="img/auto.png" onclick="doDirections(google.maps.TravelMode.DRIVING);">
             <img class="button" id="bus" src="img/bussi.png" onclick="doDirections(google.maps.TravelMode.TRANSIT);">
             <img class="button" id="walk" src="img/walk.png" onclick="doDirections(google.maps.TravelMode.WALKING);">

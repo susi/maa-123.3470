@@ -42,7 +42,7 @@ function initialize() {
         infowindow.close();
         var content = '<div class="googft-info-window">' + event.infoWindowHtml +
           '<div class="googft-info-window"><a href="#" onclick="getdirections('+
-          event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">opastus<a></div></div>';
+          event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">directions<a></div></div>';
         infowindow.setContent(content);
         infowindow.setPosition(event.latLng);
         var anchor = new google.maps.MVCObject();
@@ -79,7 +79,7 @@ function getdirections(featureId, lat, lng) {
                 document.getElementById('to').value = results[0].formatted_address;
             }
         }
-        directionsDiv.className = 'visible';
+        directionsDiv.className = 'visible shadow';
     });
 }
 
