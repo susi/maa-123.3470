@@ -7,8 +7,17 @@ var alternate = false;
 var directionsDiv;
 var autocomplete;
 var places;
+var selectedTravelMode;
+var features;
+var mapsEngineLayer;
 
 function initialize() {
+    var xhReq = new XMLHttpRequest();
+    xhReq.open("GET", "https://www.googleapis.com/mapsengine/v1/tables/09463119221158894629-17468829640506321558/features?version=published&key=AIzaSyCOhR7E6unpcyL6UVTKlZIkkwH0xm7vmuY", false);
+    xhReq.send(null);
+    features = JSON.parse(xhReq.responseText);
+    console.log(features);
+    
     var mapOptions = {
         center: new google.maps.LatLng(60.25, 25),
         zoom: 10,
@@ -31,27 +40,32 @@ function initialize() {
     infowindow = new google.maps.InfoWindow({
         content: '<div style="width:15em;">&nbsp;</div>'
     });
-    var mapsEngineLayer = new google.maps.visualization.MapsEngineLayer({
+    mapsEngineLayer = new google.maps.visualization.DynamicMapsEngineLayer({
         mapId: '09463119221158894629-11613121305523030954',
         layerKey: 'mjr_01',
         map: map,
         clickable: true,
         suppressInfoWindows: true
     });
-    google.maps.event.addListener(mapsEngineLayer, 'click', function(event) {
+    google.maps.event.addListener(mapsEngineLayer, 'click', function(dynevent) {
         infowindow.close();
-        var content = '<div class="googft-info-window">' + event.infoWindowHtml +
-          '<div class="googft-info-window"><a href="#" onclick="getdirections('+
-          event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">directions<a></div></div>';
-        infowindow.setContent(content);
-        infowindow.setPosition(event.latLng);
-        var anchor = new google.maps.MVCObject();
-        anchor.set('position', event.latLng);
-//        anchor.set('anchorPoint', event.pixelOffset);
-        infowindow.open(map, anchor);
+        mapsEngineLayer.getFeatureStyle(dynevent.featureId).resetAll();
+        dynevent.getDetails(function(event) {
+            var content = '<div class="googft-info-window">' + event.infoWindowHtml +
+              '<div class="googft-info-window"><a href="#" onclick="getdirections('+
+              event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">directions<a></div></div>';
+            infowindow.setContent(content);
+            infowindow.setPosition(event.latLng);
+            var anchor = new google.maps.MVCObject();
+            anchor.set('position', event.latLng);
+    //        anchor.set('anchorPoint', event.pixelOffset);
+            infowindow.open(map, anchor);
+        });
     });
     directionsDiv = document.getElementById('directions-widget');
-
+    
+    var searchBox = document.getElementById("search-system");
+    map.controls[google.maps.ControlPosition.TOP_LEFT].push(searchBox);
 }
 
 function getdirections(featureId, lat, lng) {
@@ -80,10 +94,14 @@ function getdirections(featureId, lat, lng) {
             }
         }
         directionsDiv.className = 'visible shadow';
+        if (document.getElementById('to') && document.getElementById('from') && selectedTravelMode) {
+            doDirections(selectedTravelMode);
+        }
     });
 }
 
 function doDirections(travelMode) {
+    selectedTravelMode = travelMode;
     selectImage(travelMode);
     var start = document.getElementById("from").value;
     if (alternate) {
@@ -121,6 +139,7 @@ function closeDirections() {
     unselectAll();
     map.controls[google.maps.ControlPosition.TOP_CENTER].pop();
     directionsDisplay.setMap(null);
+    selectedTravelMode = null;
 }
 
 function selectImage(travelMode) {
@@ -170,5 +189,67 @@ function geolocate() {
   }
 }
 
+function makeSearchResultMouseOverFn(gx_id) {
+    return function() {
+        var style = mapsEngineLayer.getFeatureStyle(gx_id);
+        style.iconSize = '200% 200%';
+    }
+}
+
+function makeSearchResultClickFn(f, gx_id) {
+    var coords = features.features[f].geometry.coordinates;
+    return function() {
+        var style = mapsEngineLayer.getFeatureStyle(gx_id);
+        console.log("Mouse click on " + gx_id);
+    }
+}
+
+function makeSearchResultMouseOutFn(gx_id) {
+    return function() {
+        mapsEngineLayer.getFeatureStyle(gx_id).resetAll();
+    }
+}
+
+function search() {
+    var hits = [];
+    var searchBox = document.getElementById('search-box');
+    var query = searchBox.value;
+    for (var f in features.features) {
+        for (var key in features.features[f].properties) {
+            if (((typeof features.features[f].properties[key]) == (typeof '')) &&
+                (features.features[f].properties[key].indexOf(query) != -1))
+            {
+                hits.push([f, features.features[f].properties.gx_id]);
+                break;
+            }
+        }
+    }
+    var results = document.getElementById('search-results');
+    results.innerHTML = '';
+    for (var i in hits) {
+        var gx_id = hits[i][1];
+        f = hits[i][1];
+        var result = document.createElement('div');
+        result.className = 'result';
+        result.onmouseover = makeSearchResultMouseOverFn(gx_id);
+        result.onmouseout = makeSearchResultMouseOutFn(gx_id);
+        result.onclick = makeSearchResultClickFn(f, gx_id);
+        var name = document.createElement('h3');
+        name.className = 'result-name';
+        name.innerHTML = features.features[f].properties.nimi;
+        var p = document.createElement('p');
+        p.className = 'result-text';
+        p.innerHTML = features.features[f].properties.kuvaus + '...';
+        result.appendChild(name);
+        result.appendChild(p);
+        results.appendChild(result);
+    }
+    results.className = 'visible';
+}
+
+function hideSearchResults() {
+    document.getElementById('search-results').className = 'hidden';
+    document.getElementById('search-box').value='';
+}
 
 google.maps.event.addDomListener(window, 'load', initialize);
