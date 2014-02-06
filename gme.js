@@ -11,13 +11,107 @@ var selectedTravelMode;
 var features;
 var mapsEngineLayer;
 
-function initialize() {
+function getFeatures() {
     var xhReq = new XMLHttpRequest();
-    xhReq.open("GET", "https://www.googleapis.com/mapsengine/v1/tables/09463119221158894629-17468829640506321558/features?version=published&key=AIzaSyCOhR7E6unpcyL6UVTKlZIkkwH0xm7vmuY", false);
+
+    var server = "https://www.googleapis.com/mapsengine/v1/tables/";
+    var table = "09463119221158894629-17468829640506321558";
+
+    var GMErequestParams = {
+        version: "published",
+        key: "AIzaSyCOhR7E6unpcyL6UVTKlZIkkwH0xm7vmuY"
+    };
+
+    var url = server + table + "/features?";
+    url += "version="+GMErequestParams.version;
+    url += "&key="+GMErequestParams.key;
+
+    xhReq.open("GET", url, false);
     xhReq.send(null);
     features = JSON.parse(xhReq.responseText);
     console.log(features);
-    
+    return features;
+}
+
+function initialize() {
+
+    var simple_atlas_style = [ { "featureType" : "poi",
+        "stylers" : [ { "visibility" : "off" } ]
+    },
+      { "elementType" : "geometry",
+        "featureType" : "administrative",
+        "stylers" : [ { "visibility" : "off" } ]
+      },
+      { "elementType" : "geometry",
+        "featureType" : "administrative.land_parcel",
+        "stylers" : [ { "visibility" : "on" } ]
+      },
+      { "elementType" : "geometry",
+        "featureType" : "administrative.country",
+        "stylers" : [ { "visibility" : "on" } ]
+      },
+      { "elementType" : "geometry",
+        "featureType" : "administrative.province",
+        "stylers" : [ { "visibility" : "on" } ]
+      },
+      { "elementType" : "geometry",
+        "featureType" : "administrative.neighborhood",
+        "stylers" : [ { "visibility" : "on" } ]
+      },
+      { "elementType" : "geometry",
+        "featureType" : "administrative.locality",
+        "stylers" : [ { "visibility" : "on" } ]
+      },
+      { "elementType" : "labels",
+        "featureType" : "administrative.locality",
+        "stylers" : [ { "hue" : "#548096" },
+            { "saturation" : -50 },
+            { "lightness" : 35 },
+            { "visibility" : "on" }
+          ]
+      },
+      { "elementType" : "labels",
+        "featureType" : "road",
+        "stylers" : [ { "visibility" : "simplified" } ]
+      },
+      { "elementType" : "geometry",
+        "featureType" : "water",
+        "stylers" : [ { "hue" : "#548096" },
+            { "saturation" : -37 },
+            { "lightness" : -10 },
+            { "visibility" : "on" }
+          ]
+      },
+      { "elementType" : "all",
+        "featureType" : "landscape",
+        "stylers" : [ { "hue" : "#E3CBAC" },
+            { "saturation" : 31 },
+            { "lightness" : -12 },
+            { "visibility" : "on" }
+          ]
+      },
+      { "featureType" : "road",
+        "stylers" : [ { "visibility" : "simplified" },
+            { "saturation" : -49 },
+            { "lightness" : 5 }
+          ]
+      },
+      { "elementType" : "geometry",
+        "featureType" : "road",
+        "stylers" : [ { "visibility" : "simplified" },
+            { "saturation" : -90 },
+            { "lightness" : 90 }
+          ]
+      },
+      { "featureType" : "administrative.land_parcel",
+        "stylers" : [ { "visibility" : "off" },
+            { "lightness" : 25 }
+          ]
+      }
+    ];
+
+    var simpleAtlas = new google.maps.StyledMapType(simple_atlas_style, {name: "Simple Atlas"});
+
     var mapOptions = {
         center: new google.maps.LatLng(60.25, 25),
         zoom: 10,
@@ -26,11 +120,19 @@ function initialize() {
         overviewMapControlOptions: {
             opened: true
         },
-        mapTypeId: google.maps.MapTypeId.STREET
+        mapTypeControlOptions: {
+            mapTypeIds: [
+                google.maps.MapTypeId.ROADMAP,
+                google.maps.MapTypeId.TERRAIN,
+                google.maps.MapTypeId.SATELLITE,
+                google.maps.MapTypeId.HYBRID,
+                'simple_atlas']
+        }
     };
     map = new google.maps.Map(document.getElementById('map-canvas'),
                               mapOptions);
-
+    map.mapTypes.set('simple_atlas', simpleAtlas);
+    map.setMapTypeId('simple_atlas');
     geocoder = new google.maps.Geocoder();
     directionsService = new google.maps.DirectionsService();
     directionsDisplay = new google.maps.DirectionsRenderer();
@@ -40,6 +142,7 @@ function initialize() {
     infowindow = new google.maps.InfoWindow({
         content: '<div style="width:15em;">&nbsp;</div>'
     });
+
     mapsEngineLayer = new google.maps.visualization.DynamicMapsEngineLayer({
         mapId: '09463119221158894629-11613121305523030954',
         layerKey: 'mjr_01',
@@ -193,6 +296,7 @@ function makeSearchResultMouseOverFn(gx_id) {
     return function() {
         var style = mapsEngineLayer.getFeatureStyle(gx_id);
         style.iconSize = '200% 200%';
+        style.iconOpacity = 1.0;
     }
 }
 
@@ -214,6 +318,9 @@ function search() {
     var hits = [];
     var searchBox = document.getElementById('search-box');
     var query = searchBox.value;
+
+    features = getFeatures();
+
     for (var f in features.features) {
         for (var key in features.features[f].properties) {
             if (((typeof features.features[f].properties[key]) == (typeof '')) &&
