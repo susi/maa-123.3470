@@ -1,5 +1,4 @@
 var map;
-var infowindow;
 var geocoder;
 var directionsDisplay;
 var directionsService;
@@ -10,6 +9,8 @@ var places;
 var selectedTravelMode;
 var features;
 var mapsEngineLayer;
+var infowindow;
+var legend;
 
 function getFeatures() {
     var xhReq = new XMLHttpRequest();
@@ -34,7 +35,7 @@ function getFeatures() {
 }
 
 function initialize() {
-
+    infowindow = document.getElementById("infowindow");
     var simple_atlas_style = [ { "featureType" : "poi",
         "stylers" : [ { "visibility" : "off" } ]
     },
@@ -127,6 +128,15 @@ function initialize() {
                 google.maps.MapTypeId.SATELLITE,
                 google.maps.MapTypeId.HYBRID,
                 'simple_atlas']
+        },
+        panControl: true,
+        panControlOptions: {
+            position: google.maps.ControlPosition.RIGHT_TOP
+        },
+        zoomControl: true,
+        zoomControlOptions: {
+            style: google.maps.ZoomControlStyle.DEFAULT,
+            position: google.maps.ControlPosition.RIGHT_TOP
         }
     };
     map = new google.maps.Map(document.getElementById('map-canvas'),
@@ -139,10 +149,6 @@ function initialize() {
     directionsDisplay.setMap(map);
     places = new google.maps.places.PlacesService(map);
 
-    infowindow = new google.maps.InfoWindow({
-        content: '<div style="width:15em;">&nbsp;</div>'
-    });
-
     mapsEngineLayer = new google.maps.visualization.DynamicMapsEngineLayer({
         mapId: '09463119221158894629-11613121305523030954',
         layerKey: 'mjr_01',
@@ -151,30 +157,36 @@ function initialize() {
         suppressInfoWindows: true
     });
     google.maps.event.addListener(mapsEngineLayer, 'click', function(dynevent) {
-        infowindow.close();
+        hideSearchResults();
+        infowindow.innerHTML = '';
+
         mapsEngineLayer.getFeatureStyle(dynevent.featureId).resetAll();
         dynevent.getDetails(function(event) {
-            var content = '<div class="googft-info-window">' + event.infoWindowHtml +
-              '<div class="googft-info-window"><a href="#" onclick="getdirections('+
-              event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">directions<a></div></div>';
-            infowindow.setContent(content);
-            infowindow.setPosition(event.latLng);
-            var anchor = new google.maps.MVCObject();
-            anchor.set('position', event.latLng);
-    //        anchor.set('anchorPoint', event.pixelOffset);
-            infowindow.open(map, anchor);
+            var content = event.infoWindowHtml +
+              '<br><a href="#" onclick="getdirections('+
+              event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">directions<a>';
+            infowindow.innerHTML = content;
+            infowindow.className = 'maximized';
         });
     });
     directionsDiv = document.getElementById('directions-widget');
     
     var searchBox = document.getElementById("search-system");
     map.controls[google.maps.ControlPosition.TOP_LEFT].push(searchBox);
+
+    var title = document.getElementById("title");
+    map.controls[google.maps.ControlPosition.TOP_CENTER].push(title);
+    
+    legend = document.getElementById("legend");
+    google.maps.event.addDomListener(legend, 'click', toggleLegend);
+    google.maps.event.addDomListener(infowindow, 'click', toggleInfoWindow);
+
 }
 
 function getdirections(featureId, lat, lng) {
     var latLng = new google.maps.LatLng(lat,lng);
     // Create a div to hold the control.
-    infowindow.close();
+    infowindow.className = 'minimized';
 
     if (map.controls[google.maps.ControlPosition.TOP_CENTER].length > 0) {
         map.controls[google.maps.ControlPosition.TOP_CENTER].pop();
@@ -207,20 +219,21 @@ function doDirections(travelMode) {
     selectedTravelMode = travelMode;
     selectImage(travelMode);
     var start = document.getElementById("from").value;
+    var end;
     if (alternate) {
-        var end = document.getElementById("to").value;
+        end = document.getElementById("to").value;
     } else {
-        var end = document.getElementById("real-to").value;
+        end = document.getElementById("real-to").value;
     }
     var request = {
         origin:start,
-        destination:end,
+        destination: end,
         travelMode: travelMode
     };
     console.log('Getting directions from ' + start + ' to ' + end);
     directionsService.route(request, function(result, status) {
         if (status == google.maps.DirectionsStatus.OK) {
-            console.log('FOund a route!');
+            console.log('Found a route!');
             directionsDisplay.setDirections(result);
             directionsDisplay.setMap(map);
             alternate = false;
@@ -357,6 +370,28 @@ function search() {
 function hideSearchResults() {
     document.getElementById('search-results').className = 'hidden';
     document.getElementById('search-box').value='';
+}
+
+function toggleInfoWindow() {
+    if (infowindow.className == 'minimized') {
+        hideSearchResults();
+        legend.className = 'legend';
+        infowindow.className = 'maximized';
+    }
+    else {
+        infowindow.className = 'minimized';
+    }
+}
+
+function toggleLegend() {
+    if (legend.className == 'legend') {
+        hideSearchResults();
+        infowindow.className = 'minimized';
+        legend.className = 'full-legend';
+    }
+    else {
+        legend.className = 'legend';
+    }
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
