@@ -31,7 +31,7 @@
 }
 
 #infowindow {
-    bottom: 30px;
+    bottom: 50px;
     width: 400px;
     height: 210px;
     outline: none;
@@ -49,6 +49,7 @@
   -o-transition: 1s;
   transition: 1s;
 }
+
 .full-legend {
   bottom: 0;
   -webkit-transition: 1s;

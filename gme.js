@@ -167,6 +167,7 @@ function initialize() {
               event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">directions<a>';
             infowindow.innerHTML = content;
             infowindow.className = 'maximized';
+            legend.className = 'legend';
         });
     });
     directionsDiv = document.getElementById('directions-widget');
