@@ -11,6 +11,8 @@ var features;
 var mapsEngineLayer;
 var infowindow;
 var legend;
+var directionsInstructions;
+var haveDirections = false;
 
 function getFeatures() {
     var xhReq = new XMLHttpRequest();
@@ -148,6 +150,13 @@ function initialize() {
     directionsDisplay = new google.maps.DirectionsRenderer();
     directionsDisplay.setMap(map);
     places = new google.maps.places.PlacesService(map);
+    autocomplete = new google.maps.places.Autocomplete(
+        document.getElementById('from'),
+        {
+            bounds: map.getBounds(),
+            componentRestrictions: { 'country': 'fi' },
+            types: ['geocode']
+        });
 
     mapsEngineLayer = new google.maps.visualization.DynamicMapsEngineLayer({
         mapId: '09463119221158894629-11613121305523030954',
@@ -181,26 +190,13 @@ function initialize() {
     legend = document.getElementById("legend");
     google.maps.event.addDomListener(legend, 'click', toggleLegend);
     google.maps.event.addDomListener(infowindow, 'click', toggleInfoWindow);
-
+    directionsDiv.onclick = toggleDirections;
+    directionsInstructions = document.getElementById('directions-instructions');
 }
 
 function getdirections(featureId, lat, lng) {
     var latLng = new google.maps.LatLng(lat,lng);
-    // Create a div to hold the control.
-    infowindow.className = 'minimized';
 
-    if (map.controls[google.maps.ControlPosition.TOP_CENTER].length > 0) {
-        map.controls[google.maps.ControlPosition.TOP_CENTER].pop();
-    }
-    map.controls[google.maps.ControlPosition.TOP_CENTER].push(directionsDiv);
-
-    autocomplete = new google.maps.places.Autocomplete(
-        document.getElementById('from'),
-        {
-            bounds: map.getBounds(),
-            componentRestrictions: { 'country': 'fi' },
-            types: ['geocode']
-        });
     document.getElementById('to').value = lat+","+lng;
     document.getElementById('real-to').value = lat+","+lng;
     geocoder.geocode({'latLng': latLng}, function(results, status) {
@@ -209,7 +205,7 @@ function getdirections(featureId, lat, lng) {
                 document.getElementById('to').value = results[0].formatted_address;
             }
         }
-        directionsDiv.className = 'visible shadow';
+        directionsDiv.className = "maximized";
         if (document.getElementById('to') && document.getElementById('from') && selectedTravelMode) {
             doDirections(selectedTravelMode);
         }
@@ -235,9 +231,14 @@ function doDirections(travelMode) {
     directionsService.route(request, function(result, status) {
         if (status == google.maps.DirectionsStatus.OK) {
             console.log('Found a route!');
+            haveDirections = true;
             directionsDisplay.setDirections(result);
             directionsDisplay.setMap(map);
+            directionsDisplay.setPanel(directionsInstructions);
+            directionsInstructions.className = 'visible';
             alternate = false;
+            directionsDiv.style.height = '510px';
+            openDirections();
         }
         else {
             if (!alternate) {
@@ -250,13 +251,6 @@ function doDirections(travelMode) {
             }
         }
     });
-}
-
-function closeDirections() {
-    unselectAll();
-    map.controls[google.maps.ControlPosition.TOP_CENTER].pop();
-    directionsDisplay.setMap(null);
-    selectedTravelMode = null;
 }
 
 function selectImage(travelMode) {
@@ -333,6 +327,7 @@ function search() {
     var searchBox = document.getElementById('search-box');
     var query = searchBox.value;
 
+    closeDirections();
     features = getFeatures();
 
     for (var f in features.features) {
@@ -369,8 +364,9 @@ function search() {
 }
 
 function hideSearchResults() {
-    document.getElementById('search-results').className = 'hidden';
-    document.getElementById('search-box').value='';
+    var results = document.getElementById('search-results');
+    results.innerHTML = '';
+    results.className = 'hidden';
 }
 
 function toggleInfoWindow() {
@@ -378,6 +374,10 @@ function toggleInfoWindow() {
         hideSearchResults();
         legend.className = 'legend';
         infowindow.className = 'maximized';
+        if(haveDirections) {
+            directionsDiv.style.height = '110px';
+            directionsInstructions.className = 'hidden';
+        }
     }
     else {
         infowindow.className = 'minimized';
@@ -392,6 +392,62 @@ function toggleLegend() {
     }
     else {
         legend.className = 'legend';
+    }
+}
+
+function closeDirections() {
+    if(haveDirections) {
+        directionsDisplay.setMap(null);
+        directionsDiv.style.height = '110px';
+    }
+    directionsInstructions.className = 'hidden';
+    directionsDiv.className = 'minimized';
+}
+
+function clearDirections() {
+    selectedTravelMode = null;
+    directionsDiv.style.height = '110px';
+    directionsInstructions.className = 'hidden';
+}
+
+
+function openDirections() {
+    directionsDiv.className == 'maximized'
+    if(haveDirections) {
+        directionsDiv.style.height = '510px';
+        directionsDisplay.setMap(map);
+    }
+    directionsInstructions.className = 'visible';
+}
+
+function toggleDirections(e) {
+    var elementsToSkip = {
+        'from': true,
+        'car': true,
+        'bus': true,
+        'bike': true,
+        'walk': true
+    };
+    if ((e.toElement.id in elementsToSkip) && elementsToSkip[e.toElement.id]) {
+        console.log("clicked on a widget.");
+    } else {
+        console.log("toggleDirections");
+        if (directionsDiv.className == 'minimized') {
+            console.log("Opening directions");
+            directionsDiv.className = 'maximized';
+            if(haveDirections) {
+                infowindow.className = 'minimized';
+                legend.className = 'legend';
+                directionsDiv.style.height = '510px';
+                directionsInstructions.className = 'visible';
+            }
+        }
+        else {
+            console.log("closing directions");
+            directionsDiv.className = 'minimized';
+            directionsDiv.style.height = '110px';
+            directionsInstructions.className = 'hidden';
+        }
     }
 }
 
