@@ -120,7 +120,7 @@ function initialize() {
       }
     ];
 
-    var simpleAtlas = new google.maps.StyledMapType(simple_atlas_style, {name: "Simple Atlas"});
+    var simpleAtlas = new google.maps.StyledMapType(simple_atlas_style, {name: "Pelkistetty kartta"});
 
     var mapOptions = {
         center: helsinki,
