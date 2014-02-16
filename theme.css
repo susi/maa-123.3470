@@ -92,6 +92,25 @@ body {
   transition: 1s;
 }
 
+#title {
+    background-color: rgba(255, 255, 255, .85);
+    font-size: 20px;
+    font-family: Roboto;
+    text-overflow: ellipsis;
+    color: #f62;
+    margin: 0;
+    border: 0;
+    position: absolute;
+    top: 0;
+    left: 500px;
+    padding: 15px 30px 20px 30px;
+}
+
+#title a {
+    text-decoration: none;
+    color: #f62;
+}
+
 #legend {
     left: 100px;
     width: 241px;
@@ -142,16 +161,6 @@ body {
     -moz-box-shadow: 7px 7px 8px #818181;
     box-shadow: 7px 7px 8px #818181;
     filter: progid:DXImageTransform.Microsoft.dropShadow(color=#818181, offX=7, offY=7, positive=true);
-}
-
-#title {
-    background-color: rgba(255, 255, 255, .85);
-    padding: 5px 12px 0 14px;
-    font-size: 20px;
-    font-family: Roboto;
-    text-overflow: ellipsis;
-    color: #f62;
-    height: 41px;
 }
 
 .text-input {
@@ -224,6 +233,13 @@ body {
     padding: 0 12px 8px 14px;
     width: 354px;
     border-bottom: 1px dashed #bbb;
+}
+
+.nohits {
+    font-style: italic;
+    color: #777;
+    padding: 15px;
+    font-size: 14px;
 }
 
 h3.result-name{

@@ -11,31 +11,31 @@
         padding: 0px
       }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?sensor=false&amp;libraries=visualization,places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?sensor=false&amp;language=fi&amp;libraries=visualization,places"></script>
     <script src="gme.js"></script>
   </head>
   <body>
-    <div id="title" class="controls">Muinaisjäännökset</div>
     <div id="search-system" class="controls">
-        <input id="search-box" class="text-input" type="text" placeholder="Search for places" onchange="search();" onsubmit="search();">
+        <input id="search-box" class="text-input" type="text" placeholder="Etsi muinaisjäännöksiä" onchange="search();" onsubmit="search();">
         <div id="search-box-close" class="clear-text" onclick="hideSearchResults();"><a href="javascript:hideSearchResults()">×</a></div>
         <div id="search-results" class="hidden"></div>
     </div>
     <div id="map-canvas"></div>
+    <div id="title" class="banner"><a href="javascript:resetView()">Muinaisjäännöskartta</a></div>
     <div id="directions-widget" class="minimized">
-        <input type="text" name="from" id="from" value="" placeholder="Start location" class="text-input">
+        <input type="text" name="from" id="from" value="" placeholder="Lisää aloituspaikka" class="text-input">
         <br>
-        <input type="text" name="to" id="to" value="" placeholder="Destination" disabled="disabled" class="text-input">
+        <input type="text" name="to" id="to" value="" placeholder="Valitse muinaisjäännös" disabled="disabled" class="text-input">
         <input type="hidden" name="real-to" id="real-to" value=""><br>
         <div>
-            <img class="button" id="car" src="img/auto.png" onclick="doDirections(google.maps.TravelMode.DRIVING);">
-            <img class="button" id="bus" src="img/bussi.png" onclick="doDirections(google.maps.TravelMode.TRANSIT);">
-            <img class="button" id="walk" src="img/walk.png" onclick="doDirections(google.maps.TravelMode.WALKING);">
-            <img class="button" id="bike" src="img/bike.png" onclick="doDirections(google.maps.TravelMode.BICYCLING);">
+            <img class="button" title="auto" alt="auto" id="car" src="img/auto.png" onclick="doDirections(google.maps.TravelMode.DRIVING);">
+            <img class="button" title="julkiset" alt="julkiset" id="bus" src="img/bussi.png" onclick="doDirections(google.maps.TravelMode.TRANSIT);">
+            <img class="button" title="kävely" alt="kävely" id="walk" src="img/walk.png" onclick="doDirections(google.maps.TravelMode.WALKING);">
+            <img class="button" title="pyöräily" alt="pyöräily" id="bike" src="img/bike.png" onclick="doDirections(google.maps.TravelMode.BICYCLING);">
         </div>
         <div id="directions-instructions" class="hidden"></div>
     </div>
     <div id="infowindow" class="minimized"></div>
-    <div id="legend" class="legend"><div class="title">Legend</div><img src="legenda.png" class="legend" height="174" width="241"></div>
+    <div id="legend" class="legend"><div class="title">Symbolien selite</div><img src="legenda.png" class="legend" height="174" width="241"></div>
   </body>
 </html>

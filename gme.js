@@ -13,6 +13,7 @@ var infowindow;
 var legend;
 var directionsInstructions;
 var haveDirections = false;
+var helsinki = new google.maps.LatLng(60.25, 25);
 
 function getFeatures() {
     var xhReq = new XMLHttpRequest();
@@ -34,6 +35,12 @@ function getFeatures() {
     features = JSON.parse(xhReq.responseText);
     console.log(features);
     return features;
+}
+
+function resetView() {
+    map.setMapTypeId('simple_atlas');
+    map.setCenter(helsinki);
+    map.setZoom(10);
 }
 
 function initialize() {
@@ -116,7 +123,7 @@ function initialize() {
     var simpleAtlas = new google.maps.StyledMapType(simple_atlas_style, {name: "Simple Atlas"});
 
     var mapOptions = {
-        center: new google.maps.LatLng(60.25, 25),
+        center: helsinki,
         zoom: 10,
         scaleControl: true,
         overviewMapControl: true,
@@ -173,7 +180,7 @@ function initialize() {
         dynevent.getDetails(function(event) {
             var content = event.infoWindowHtml +
               '<br><a href="#" onclick="getdirections('+
-              event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">directions<a>';
+              event.featureId+','+event.latLng.lat()+','+event.latLng.lng()+');">reittiohjeet<a>';
             infowindow.innerHTML = content;
             infowindow.className = 'maximized';
             legend.className = 'legend';
@@ -185,7 +192,7 @@ function initialize() {
     map.controls[google.maps.ControlPosition.TOP_LEFT].push(searchBox);
 
     var title = document.getElementById("title");
-    map.controls[google.maps.ControlPosition.TOP_CENTER].push(title);
+    // map.controls[google.maps.ControlPosition.TOP_CENTER].push(title);
     
     legend = document.getElementById("legend");
     google.maps.event.addDomListener(legend, 'click', toggleLegend);
@@ -206,6 +213,7 @@ function getdirections(featureId, lat, lng) {
             }
         }
         directionsDiv.className = "maximized";
+        document.getElementById('from').focus();
         if (document.getElementById('to') && document.getElementById('from') && selectedTravelMode) {
             doDirections(selectedTravelMode);
         }
@@ -237,17 +245,28 @@ function doDirections(travelMode) {
             directionsDisplay.setPanel(directionsInstructions);
             directionsInstructions.className = 'visible';
             alternate = false;
-            directionsDiv.style.height = '510px';
             openDirections();
         }
         else {
             if (!alternate) {
-                alert("No direct route found.\nTrying to get as close as possible.");
-                alternate = true;
-                doDirections(travelMode);
+                if (!start) {
+                    alert("Lisää aloituspaikka!");
+                    document.getElementById('from').focus();
+                }
+                else {
+                    alert("Suoraa reittiä ei löytynyt.\nYritetään löytää reitti lähelle.");
+                    alternate = true;
+                    doDirections(travelMode);
+                }
             } else {
-                alert("Route not found.\nCannot find a route. Please try another transportation method.");
-                alternate = false;
+                if (!start) {
+                    alert("Lisää aloituspaikka!");
+                    document.getElementById('from').focus();
+                }
+                else {
+                    alert("Reittiä ei löytynyt.\nEi voida reititää. Valitse eri kulkutapa.");
+                    alternate = false;
+                }
             }
         }
     });
@@ -300,26 +319,47 @@ function geolocate() {
   }
 }
 
-function makeSearchResultMouseOverFn(gx_id) {
+function makeSearchResultMouseOverFn(f, gx_id) {
+    var tyyppi = features.features[f].properties.tyyppi;
     return function() {
         var style = mapsEngineLayer.getFeatureStyle(gx_id);
-        style.iconSize = '200% 200%';
-        style.iconOpacity = 1.0;
-    }
+        if (tyyppi == 'luonnonmuodostumat') {
+            style.iconImage = 'url(img/luonto_selected.png)';
+        }
+        else if (tyyppi == 'taide, muistomerkit') {
+            style.iconImage = 'url(img/taide_selected.png)';
+        }
+        else if (tyyppi == 'kultti- ja tarinapaikat') {
+            style.iconImage = 'url(img/kultti_selected.png)';
+        }
+        console.log("Set icon style for feature " + gx_id + " to " + style.iconImage);
+    };
 }
 
 function makeSearchResultClickFn(f, gx_id) {
     var coords = features.features[f].geometry.coordinates;
     return function() {
-        var style = mapsEngineLayer.getFeatureStyle(gx_id);
+        var infoWindowContents = [
+            '<div class="googft-info-window" style="font-family:sans-serif">',
+            '<b>Muinaismuisto:</b> ' + features.features[f].properties.nimi+ '<br>',
+            '<b>Kunta:</b> ' + features.features[f].kunta + '<br>',
+            '<b>Sijainti:</b> ' + features.features[f].properties.sijainti + '<br>',
+            '<b>Tyyppi:</b> ' + features.features[f].properties.tyyppi + '<br>',
+            '<b>Alatyyppi:</b> ' + features.features[f].properties.alatyyppi + '<br>',
+            '<b>Kuvaus:</b> ' + features.features[f].properties.kuvaus + '...<br>',
+            '<a href="http://kulttuuriymparisto.nba.fi/netsovellus/rekisteriportaali/mjreki/read/asp/r_kohde_det1.aspx?KOHDE_ID='+
+            features.features[f].properties.MJTUNNUS+'"><b>Lisätietoja</b></a><br>',
+            '</div><br>',
+            '<a href="#" onclick="getdirections('+ gx_id + ',' + coords[1] + ',' + coords[0] +');">reittiohjeet</a>'];
         console.log("Mouse click on " + gx_id);
-    }
+        openInfoWindow(infoWindowContents.join('\n'));
+    };
 }
 
 function makeSearchResultMouseOutFn(gx_id) {
     return function() {
         mapsEngineLayer.getFeatureStyle(gx_id).resetAll();
-    }
+    };
 }
 
 function search() {
@@ -344,21 +384,20 @@ function search() {
     results.innerHTML = '';
     for (var i in hits) {
         var gx_id = hits[i][1];
-        f = hits[i][1];
+        f = hits[i][0];
         var result = document.createElement('div');
         result.className = 'result';
-        result.onmouseover = makeSearchResultMouseOverFn(gx_id);
+        result.onmouseover = makeSearchResultMouseOverFn(f, gx_id);
         result.onmouseout = makeSearchResultMouseOutFn(gx_id);
         result.onclick = makeSearchResultClickFn(f, gx_id);
         var name = document.createElement('h3');
         name.className = 'result-name';
         name.innerHTML = features.features[f].properties.nimi;
-        var p = document.createElement('p');
-        p.className = 'result-text';
-        p.innerHTML = features.features[f].properties.kuvaus + '...';
         result.appendChild(name);
-        result.appendChild(p);
         results.appendChild(result);
+    }
+    if (hits.length == 0) {
+        results.innerHTML = '<div class="nohits">Ei osumia haulle ' + query + '</div>';
     }
     results.className = 'visible';
 }
@@ -367,6 +406,8 @@ function hideSearchResults() {
     var results = document.getElementById('search-results');
     results.innerHTML = '';
     results.className = 'hidden';
+    var searchBox = document.getElementById('search-box');
+    searchBox.value = '';
 }
 
 function toggleInfoWindow() {
@@ -412,12 +453,27 @@ function clearDirections() {
 
 
 function openDirections() {
-    directionsDiv.className == 'maximized'
+    console.log("Opening directions");
     if(haveDirections) {
-        directionsDiv.style.height = '510px';
+        infowindow.className = 'minimized';
+        legend.className = 'legend';
+        var height = "innerHeight" in window 
+               ? window.innerHeight
+               : document.documentElement.offsetHeight;
+        if (height < 700) {
+            console.log("small screen!");
+            directionsDiv.style.height = '285px';
+            directionsInstructions.style.height = "180px";
+        }
+        else {
+            console.log("normal screen!");
+            directionsDiv.style.height = '510px';
+            directionsInstructions.style.height = "400px";
+        }
         directionsDisplay.setMap(map);
+        directionsInstructions.className = 'visible';
     }
-    directionsInstructions.className = 'visible';
+    directionsDiv.className = 'maximized';
 }
 
 function toggleDirections(e) {
@@ -433,14 +489,7 @@ function toggleDirections(e) {
     } else {
         console.log("toggleDirections");
         if (directionsDiv.className == 'minimized') {
-            console.log("Opening directions");
-            directionsDiv.className = 'maximized';
-            if(haveDirections) {
-                infowindow.className = 'minimized';
-                legend.className = 'legend';
-                directionsDiv.style.height = '510px';
-                directionsInstructions.className = 'visible';
-            }
+            openDirections();
         }
         else {
             console.log("closing directions");
@@ -450,5 +499,13 @@ function toggleDirections(e) {
         }
     }
 }
+
+function openInfoWindow(contents) {
+    hideSearchResults();
+    infowindow.innerHTML = contents;
+    infowindow.className = 'maximized';
+    legend.className = 'legend';
+}
+
 
 google.maps.event.addDomListener(window, 'load', initialize);
