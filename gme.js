@@ -172,7 +172,7 @@ function initialize() {
         clickable: true,
         suppressInfoWindows: true
     });
-    google.maps.event.addListener(mapsEngineLayer, 'click', function(dynevent) {
+    google.maps.event.addListener(mapsEngineLayer, 'mouseover', function(dynevent) {
         hideSearchResults();
         infowindow.innerHTML = '';
 
@@ -196,6 +196,8 @@ function initialize() {
     
     legend = document.getElementById("legend");
     google.maps.event.addDomListener(legend, 'click', toggleLegend);
+    google.maps.event.addDomListener(legend, 'mouseover', toggleLegend);
+    google.maps.event.addDomListener(legend, 'mouseout', toggleLegend);
     google.maps.event.addDomListener(infowindow, 'click', toggleInfoWindow);
     directionsDiv.onclick = toggleDirections;
     directionsInstructions = document.getElementById('directions-instructions');
