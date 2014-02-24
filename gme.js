@@ -375,7 +375,7 @@ function search() {
     for (var f in features.features) {
         for (var key in features.features[f].properties) {
             if (((typeof features.features[f].properties[key]) == (typeof '')) &&
-                (features.features[f].properties[key].indexOf(query) != -1))
+                (features.features[f].properties[key].toLowerCase().indexOf(query.toLowerCase()) != -1))
             {
                 hits.push([f, features.features[f].properties.gx_id]);
                 break;
